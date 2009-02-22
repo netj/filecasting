@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# filecasting -- A podcast generator for multimedia files
+# Usage: filecasting FILE...
+# 
+# Prerequisites: following files should exists in an ancestor directory.
+#  .filecast.title          which contains the title of the podcast
+#  .filecast.description    which contains the description about the podcast
+#  .filecast.baseurl        which contains the base URL of the podcast
+#
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2009-02-20
+# See-Also: http://www.apple.com/itunes/whatson/podcasts/specs.html
+set -e
+
+usage() {
+    sed -n '2,/^#$/ s/^# //p' <"$0"
+    exit 1
+}
+
+find-up() {
+    local f=$1; shift
+    while ! [ -e "$f" ]; do
+        if [ "$PWD" = / ]; then
+            echo "$f: Not found" >&2
+            return 1
+        fi
+        cd ..
+    done
+    echo "$PWD/$f"
+}
+
+cat-up() {
+    local f=
+    if f=`find-up "$@"`; then
+        cat "$f"
+    else
+        false
+    fi
+}
+
+urlescape() {
+    python -c 'import sys,urllib; print urllib.quote(sys.argv[1])' "$1"
+}
+
+itunes-supported() {
+    local t=$1; shift
+    case "$t" in
+         audio/mpeg         \
+        |audio/x-m4a        \
+        |video/mp4          \
+        |video/x-m4v        \
+        |video/3gpp         \
+        |video/quicktime    \
+        |application/pdf    \
+        ) true ;;
+        *) false ;;
+    esac
+}
+
+[ $# -gt 0 ] || usage
+
+baseurlfile=`find-up .filecast.baseurl`
+baseurldir=`dirname "$baseurlfile"`
+BaseURL="`cat "$baseurlfile"``urlescape "${PWD#$baseurldir}"`"
+
+Title=`cat-up .filecast.title`
+Description=`cat-up .filecast.description` || true
+
+
+cat <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
+<channel>
+<title>$Title</title>
+<description>$Description</description>
+EOF
+
+ls -dt "$@" |
+while read f; do
+    mimetype=`file --mime "$f" | sed 's/.*: *//'`
+    itunes-supported "$mimetype" || continue
+
+    title=${f%.*}
+    url="$BaseURL/`urlescape "$f"`"
+    length=`stat -c %s "$f"`
+    date=`date -r "$f" +%FT%T%:z`
+
+    echo "<item>"
+    echo "<title>$title</title>"
+    printf '<enclosure url="%s" length="%d" type="%s"/>\n' \
+        "$url" "$length" "$mimetype" <<<""
+    echo "<guid>$url</guid>"
+    echo "<pubDate>$date</pubDate>"
+    echo "</item>"
+done
+
+cat <<EOF
+</channel>
+</rss>
+EOF
