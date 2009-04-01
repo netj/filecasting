@@ -64,7 +64,7 @@ baseurldir=`dirname "$baseurlfile"`
 BaseURL="`cat "$baseurlfile"``urlescape "${PWD#$baseurldir}"`"
 
 Title=`cat-up .filecast.title`
-Description=`cat-up .filecast.description` || true
+Description=`cat-up .filecast.description 2>/dev/null` || true
 
 
 cat <<EOF
