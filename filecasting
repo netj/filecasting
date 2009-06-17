@@ -42,6 +42,15 @@ urlescape() {
     python -c 'import sys,urllib; print urllib.quote(sys.argv[1])' "$1"
 }
 
+xmlescape() {
+    sed <<<"$1" '
+    s/\&/\&amp;/g
+    s/</\&lt;/g
+    s/"/\&quot;/g
+    s/'\''/\&apos;/g
+    '
+}
+
 itunes-supported() {
     local t=$1; shift
     case "$t" in
@@ -73,9 +82,9 @@ cat <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
 <channel>
-<title>$Title</title>
-<link>$Link</link>
-<description>$Description</description>
+<title>`xmlescape "$Title"`</title>
+<link>`xmlescape "$Link"`</link>
+<description>`xmlescape "$Description"`</description>
 EOF
 
 ls -dt "$@" |
@@ -89,10 +98,10 @@ while read f; do
     date=`date -r "$f" +%FT%T%:z`
 
     echo "<item>"
-    echo "<title>$title</title>"
+    echo "<title>`xmlescape "$title"`</title>"
     printf '<enclosure url="%s" length="%d" type="%s"/>\n' \
         "$url" "$length" "$mimetype" <<<""
-    echo "<guid>$url</guid>"
+    echo "<guid>`xmlescape "$url"`</guid>"
     echo "<pubDate>$date</pubDate>"
     echo "</item>"
 done
