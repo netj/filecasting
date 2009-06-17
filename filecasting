@@ -73,8 +73,7 @@ baseurldir=`dirname "$baseurlfile"`
 BaseURL="`cat "$baseurlfile"``urlescape "${PWD#$baseurldir}"`"
 
 Title=`cat-up .filecast.title`
-Link=`cat-up .filecast.link`
-: ${Link:=$BaseURL}
+Link=`cat-up .filecast.link || echo ""`
 Description=`cat-up .filecast.description 2>/dev/null` || true
 
 
@@ -83,7 +82,7 @@ cat <<EOF
 <rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
 <channel>
 <title>`xmlescape "$Title"`</title>
-<link>`xmlescape "$Link"`</link>
+${Link:+<link>`xmlescape "$Link"`</link>}
 <description>`xmlescape "$Description"`</description>
 EOF
 
