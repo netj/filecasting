@@ -53,6 +53,7 @@ xmlescape() {
 
 itunes-supported() {
     local t=$1; shift
+    t=${t%%;*}
     case "$t" in
          audio/mpeg         \
         |audio/x-m4a        \
@@ -73,7 +74,7 @@ baseurldir=`dirname "$baseurlfile"`
 BaseURL="`cat "$baseurlfile"``urlescape "${PWD#$baseurldir}"`"
 
 Title=`cat-up .filecast.title`
-Link=`cat-up .filecast.link || echo ""`
+Link=`cat-up .filecast.link 2>/dev/null || echo ""`
 Description=`cat-up .filecast.description 2>/dev/null` || true
 
 
