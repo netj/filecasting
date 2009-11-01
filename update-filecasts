@@ -18,5 +18,14 @@ rssFileName=$1; shift || usage
 
 find "${@:-.}" -name $rssFileName |
 while read p; do
-    (cd "`dirname "$p"`" && [ . -nt $rssFileName ] && filecasting * >$rssFileName)
+    (
+    set -e
+    cd "`dirname "$p"`"
+    [ . -nt $rssFileName ]
+    if [ -e .filecast.nested ]; then 
+        find * ! -type d -print0 | xargs -0 filecasting
+    else
+        filecasting *
+    fi >$rssFileName
+    )
 done
