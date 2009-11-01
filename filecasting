@@ -43,7 +43,7 @@ urlescape() {
 }
 
 xmlescape() {
-    sed <<<"$1" '
+    sed '
     s/\&/\&amp;/g
     s/</\&lt;/g
     s/"/\&quot;/g
@@ -82,9 +82,9 @@ cat <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
 <channel>
-<title>`xmlescape "$Title"`</title>
-${Link:+<link>`xmlescape "$Link"`</link>}
-<description>`xmlescape "$Description"`</description>
+<title>`xmlescape <<<"$Title"`</title>
+${Link:+<link>`xmlescape <<<"$Link"`</link>}
+<description>`xmlescape <<<"$Description"`</description>
 EOF
 
 ls -dt "$@" |
@@ -96,12 +96,15 @@ while read f; do
     url="$BaseURL/`urlescape "$f"`"
     length=`stat -c %s "$f"`
     date=`date -r "$f" +%FT%T%:z`
+    link=`[ -r "$f".link ] && cat "$f".link || true`
 
     echo "<item>"
-    echo "<title>`xmlescape "$title"`</title>"
+    echo "<title>`xmlescape <<<"$title"`</title>"
+    [ -z "$link" ] || echo "<link>`xmlescape <<<"$link"`</link>"
+    [ -r "$f".description ] && echo "<description>`xmlescape <"$f".description`</description>"
     printf '<enclosure url="%s" length="%d" type="%s"/>\n' \
         "$url" "$length" "$mimetype" <<<""
-    echo "<guid>`xmlescape "$url"`</guid>"
+    echo "<guid>`xmlescape <<<"$url"`</guid>"
     echo "<pubDate>$date</pubDate>"
     echo "</item>"
 done

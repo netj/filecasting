@@ -3,7 +3,7 @@
 # Created: 2009-02-22
 
 NAME=filecasting
-VERSION=0.4
+VERSION=0.5
 PRODUCT=$(NAME)-$(VERSION).sh
 
 
