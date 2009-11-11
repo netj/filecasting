@@ -96,7 +96,7 @@ while read f; do
     title=${title%.*}
     title=${title##*/}
     url="$BaseURL/`urlescape "$f"`"
-    sha1=`sha1sum <"$f"`
+    sha1=`[ "$f".sha1 -nt "$f" ] && cat "$f".sha1 || sha1sum "$f" | tee "$f".sha1`
     sha1=`set -- $sha1; echo $1`
     length=`stat -c %s "$f"`
     date=`date -r "$f" +%FT%T%:z`
