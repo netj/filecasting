@@ -26,6 +26,7 @@ while read p; do
         find * ! -type d -print0 | xargs -0 filecasting
     else
         filecasting *
-    fi >$rssFileName
+    fi >.$rssFileName
+    mv -f .$rssFileName $rssFileName
     )
 done
