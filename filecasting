@@ -95,6 +95,8 @@ while read f; do
     title=$f
     title=${title%.*}
     title=${title##*/}
+    category=`dirname "$f"`
+    [ . != "$category" ] || category=
     url="$BaseURL/`urlescape "$f"`"
     sha1=`[ "$f".sha1 -nt "$f" ] && cat "$f".sha1 || sha1sum "$f" | tee "$f".sha1`
     sha1=`set -- $sha1; echo $1`
@@ -105,7 +107,10 @@ while read f; do
     echo "<item>"
     echo "<title>`xmlescape <<<"$title"`</title>"
     [ -z "$link" ] || echo "<link>`xmlescape <<<"$link"`</link>"
-    [ -r "$f".description ] && echo "<description>`xmlescape <"$f".description`</description>"
+    echo "<description>"
+    [ -n "$category" ] && echo "$category"
+    [ -r "$f".description ] && xmlescape <"$f".description
+    echo "</description>"
     printf '<enclosure url="%s" length="%d" type="%s"/>\n' \
         "$url" "$length" "$mimetype" <<<""
     echo "<guid>$sha1</guid>"
