@@ -15,6 +15,7 @@ dist/$(PRODUCT): filecasting
 
 install: dist/$(PRODUCT)
 	install $< ~/bin/$(NAME)
+	install update-filecasts ~/bin/
 
 clean:
 	rm -f dist/$(PRODUCT)
