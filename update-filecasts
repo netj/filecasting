@@ -21,10 +21,9 @@ while read p; do
     (
     set -e
     cd "`dirname "$p"`"
-    [ . -nt $rssFileName ]
     if [ -e .filecast.nested ]; then 
         find * ! -type d -print0 | xargs -0 filecasting
-    else
+    elif [ . -nt $rssFileName ]; then
         filecasting *
     fi >.$rssFileName
     mv -f .$rssFileName $rssFileName
