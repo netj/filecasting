@@ -19,9 +19,10 @@ usage() {
 
 find-up() {
     local f=$1; shift
+    local d=$PWD
     while ! [ -e "$f" ]; do
         if [ "$PWD" = / ]; then
-            echo "$f: Not found" >&2
+            echo "$d: $f: Not found" >&2
             return 1
         fi
         cd ..
