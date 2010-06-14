@@ -63,6 +63,8 @@ itunes-supported() {
         |video/3gpp         \
         |video/quicktime    \
         |application/pdf    \
+        |image/png          \
+        |image/jpeg         \
         ) true ;;
         *) false ;;
     esac
