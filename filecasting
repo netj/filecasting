@@ -94,6 +94,7 @@ ls -dt "$@" |
 while read f; do
     mimetype=`file --mime "$f" | sed 's/.*: *//'`
     itunes-supported "$mimetype" || continue
+    [ ! -e "$f".ignore ] || continue
 
     title=$f
     title=${title%.*}
