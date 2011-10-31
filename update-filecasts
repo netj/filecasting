@@ -22,7 +22,8 @@ while read p; do
     set -e
     cd "`dirname "$p"`"
     if [ -e .filecast.nested ]; then 
-        find * ! -type d -print0 | xargs -0 filecasting
+        find * -type d -execdir [ -e {}/.filecast.prune ] \; -prune -o -print0 |
+        xargs -0 filecasting
     elif [ . -nt $rssFileName ]; then
         filecasting *
     fi >.$rssFileName

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Polish mp3 files for creating Podcasts
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2011-10-30
+set -eu
+
+# remember mtimes
+for i in "$@"; do
+    echo "$i..."
+    touch -r "$i" "$i.timestamp"
+done
+
+# convert encodings
+mp3_tag_iconv-0.9c.pl -f cp949 "$@"
+
+# preserve timestamps
+for i in "$@"; do
+    touch -r "$i".timestamp "$i"
+    rm -f "$i".timestamp
+done

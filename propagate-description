@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# propagate-description -- propagate .filecast.description to each given file
+# Usage: propagate-description FILE...
+# 
+# Author: Jaeho Shin <netj@sparcs.org>
+# Created: 2011-10-30
+set -eu
+
+for i in "$@"; do
+    ln -sn .filecast.description "$i".description
+done

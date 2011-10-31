@@ -10,12 +10,18 @@
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2009-02-20
 # See-Also: http://www.apple.com/itunes/whatson/podcasts/specs.html
-set -e
+set -eu
 
 usage() {
     sed -n '2,/^#$/ s/^# //p' <"$0"
     exit 1
 }
+
+if [ -t 2 ]; then
+    msg() { echo "$@" >&2; }
+else
+    msg() { :; }
+fi
 
 find-up() {
     local f=$1; shift
@@ -41,12 +47,15 @@ cat-up() {
 
 urlescape() {
     python -c 'import sys,urllib; print urllib.quote(sys.argv[1])' "$1"
+    #perl -MURI::Escape -e 'print uri_escape_utf8($_, "^A-Za-z0-9\-\._~/") foreach @ARGV;' "$@"
+    #sed 's/%/%26/g; s/ /%20/g;' <<<"$1"
 }
 
 xmlescape() {
     sed '
     s/\&/\&amp;/g
     s/</\&lt;/g
+    s/>/\&gt;/g
     s/"/\&quot;/g
     s/'\''/\&apos;/g
     '
@@ -83,7 +92,7 @@ Description=`cat-up .filecast.description 2>/dev/null` || true
 
 cat <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
 <channel>
 <title>`xmlescape <<<"$Title"`</title>
 ${Link:+<link>`xmlescape <<<"$Link"`</link>}
@@ -92,9 +101,10 @@ EOF
 
 ls -dt "$@" |
 while read f; do
-    mimetype=`file --mime "$f" | sed 's/.*: *//'`
+    mimetype=`file --brief --mime-type "$f"`
     itunes-supported "$mimetype" || continue
     [ ! -e "$f".ignore ] || continue
+    msg "$f"
 
     title=$f
     title=${title%.*}
@@ -106,19 +116,21 @@ while read f; do
     sha1=`set -- $sha1; echo $1`
     length=`stat -c %s "$f"`
     date=`date -r "$f" +%FT%T%:z`
-    link=`[ -r "$f".link ] && cat "$f".link || true`
+    pubdate=`date -r "$f" --rfc-2822`
+    link=`[ -r "$f".link ] && cat "$f".link || echo "$url"`
 
     echo "<item>"
     echo "<title>`xmlescape <<<"$title"`</title>"
     [ -z "$link" ] || echo "<link>`xmlescape <<<"$link"`</link>"
     echo "<description>"
-    [ -n "$category" ] && echo "$category"
+    [ -n "$category" ] && xmlescape <<<"$category"
     [ -r "$f".description ] && xmlescape <"$f".description
     echo "</description>"
     printf '<enclosure url="%s" length="%d" type="%s"/>\n' \
-        "$url" "$length" "$mimetype" <<<""
+        "`xmlescape <<<"$url"`" "$length" "`xmlescape <<<"$mimetype"`" <<<""
     echo "<guid>$sha1</guid>"
-    echo "<pubDate>$date</pubDate>"
+    echo "<pubDate>$pubdate</pubDate>"
+    echo "<dc:date>$date</dc:date>"
     echo "</item>"
 done
 
