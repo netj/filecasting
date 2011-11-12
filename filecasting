@@ -9,7 +9,7 @@
 #
 # Author: Jaeho Shin <netj@sparcs.org>
 # Created: 2009-02-20
-# See-Also: http://www.apple.com/itunes/whatson/podcasts/specs.html
+# See-Also: http://www.apple.com/itunes/podcasts/specs.html
 set -eu
 
 usage() {
@@ -62,20 +62,37 @@ xmlescape() {
 }
 
 itunes-supported() {
-    local t=$1; shift
-    t=${t%%;*}
-    case "$t" in
-         audio/mpeg         \
-        |audio/x-m4a        \
-        |video/mp4          \
-        |video/x-m4v        \
-        |video/3gpp         \
-        |video/quicktime    \
-        |application/pdf    \
-        |image/png          \
-        |image/jpeg         \
-        ) true ;;
-        *) false ;;
+    local f=$1; shift
+    # See-Also: <enclosure> section of http://www.apple.com/itunes/podcasts/specs.html#rss
+    # Let's first try with filename (XXX since file command doesn't detect mp3 audio files very well)
+    case "`tr A-Z a-z <<<"$f"`" in # ignoring case
+        *.mp3)          echo "audio/mpeg"           ;;
+        *.m4a)          echo "audio/x-m4a"          ;;
+        *.mp4)          echo "video/mp4"            ;;
+        *.m4v)          echo "video/x-m4v"          ;;
+        *.mov)          echo "video/quicktime"      ;;
+        *.pdf)          echo "application/pdf"      ;;
+        *.epub)         echo "document/x-epub"      ;;
+        *.png)          echo "image/png"            ;;
+        *.jpg|*.jpeg)   echo "image/jpeg"           ;;
+        *) # then, try detecting file type with magic :)
+            local mimetype=`file --brief --mime-type "$f"`
+            mimetype=${mimetype%%;*}
+            case $mimetype in
+                \
+                     audio/mpeg         \
+                    |audio/x-m4a        \
+                    |video/mp4          \
+                    |video/x-m4v        \
+                    |video/quicktime    \
+                    |application/pdf    \
+                    |document/x-epub    \
+                    |image/png          \
+                    |image/jpeg         \
+                    ) echo "$mimetype" ;;
+            *) false ;;
+        esac
+        ;;
     esac
 }
 
@@ -101,8 +118,7 @@ EOF
 
 ls -dt "$@" |
 while read f; do
-    mimetype=`file --brief --mime-type "$f"`
-    itunes-supported "$mimetype" || continue
+    mimetype=`itunes-supported "$f"` || continue
     [ ! -e "$f".ignore ] || continue
     msg "$f"
 
@@ -112,7 +128,7 @@ while read f; do
     category=`dirname "$f"`
     [ . != "$category" ] || category=
     url="$BaseURL/`urlescape "$f"`"
-    sha1=`[ "$f".sha1 -nt "$f" ] && cat "$f".sha1 || sha1sum "$f" | tee "$f".sha1`
+    sha1=`[ "$f".sha1 -nt "$f" -a -s "$f".sha1 ] && cat "$f".sha1 || sha1sum "$f" | tee "$f".sha1`
     sha1=`set -- $sha1; echo $1`
     length=`stat -c %s "$f"`
     date=`date -r "$f" +%FT%T%:z`
